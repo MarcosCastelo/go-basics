@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"os"
 	"regexp"
+	"time"
 )
 
 type Question struct {
@@ -20,26 +21,52 @@ type Question struct {
 func main() {
 	var filename string
 	var shuffle bool
-	var time int
+	var countdown int
 
 	flag.StringVar(&filename, "filename", "problems.csv", "pass the csv file to load problems (Default: problems.csv)")
 	flag.BoolVar(&shuffle, "shuffle", false, "set true or false to shuffle the problems (Default: false)")
-	flag.IntVar(&time, "time", 30, "set the time for answer all questions (Default: 30)")
+	flag.IntVar(&countdown, "time", 30, "set the time for answer all questions (Default: 30)")
 
 	flag.Parse()
 
 	score := 0
 	questions, questions_ids := getQuestionsFromCSV(filename)
+
+	startTime := time.Now()
+
+	index := 0
+	id := questions_ids[index]
+	remainingTime := 0
+	answerCount := 0
+
 	fmt.Println("Welcome to quizz game now answer a series of questions and get the higher score")
-	for index, id := range questions_ids {
+	for range time.Tick(1 * time.Second) {
+		remainingTime = countdown - decreaseTime(startTime)
+		if remainingTime <= 0 {
+			break
+		}
+		if len(questions_ids) < 1 {
+			break
+		}
+		fmt.Print("\033[H\033[2J")
+		fmt.Println("Time reaming: \t\t\t", remainingTime)
 		if shuffle == true {
-			index = rand.Intn(len(questions_ids))
+			questionsLength := len(questions_ids)
+			index = rand.Intn(questionsLength)
 			id = questions_ids[index]
 			questions_ids = append(questions_ids[:index], questions_ids[index+1:]...)
 		}
 		score += scoreQuestion(&questions[id])
+		answerCount = len(questions_ids)
+		index += 1
 	}
-	fmt.Println("Congratulations, your final score is ", score)
+
+	if answerCount > 0 {
+		fmt.Println("Close!, reamaning questions: ", answerCount)
+	} else {
+		fmt.Println("Congratulations! you finished")
+	}
+	fmt.Println("Your final score is: ", score)
 }
 
 func getQuestionsFromCSV(filename string) ([]Question, []int) {
@@ -71,14 +98,22 @@ func getQuestionsFromCSV(filename string) ([]Question, []int) {
 
 func scoreQuestion(question *Question) int {
 	fmt.Printf("%s: ", question.question)
-	reader := bufio.NewReader(os.Stdin)
-	answer, err := reader.ReadString('\n')
-	answer = regexp.MustCompile(`[^a-zA-Z0-9 ]+`).ReplaceAllString(answer, "")
+	var answer string
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	err := scanner.Err()
 	if err != nil {
 		log.Fatal(err)
 	}
+	answer = regexp.MustCompile(`[^a-zA-Z0-9 ]+`).ReplaceAllString(scanner.Text(), "")
 	if answer == question.answer {
 		return 1
 	}
 	return 0
+}
+
+func decreaseTime(t time.Time) int {
+	currentTime := time.Now()
+	difference := t.Sub(currentTime)
+	return -int(difference.Seconds())
 }
