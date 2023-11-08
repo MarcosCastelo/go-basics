@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bufio"
 	"encoding/csv"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
+	"regexp"
 )
 
 type Question struct {
@@ -15,14 +18,26 @@ type Question struct {
 }
 
 func main() {
+	var filename string
+	var shuffle bool
+	var time int
+
+	flag.StringVar(&filename, "filename", "problems.csv", "pass the csv file to load problems (Default: problems.csv)")
+	flag.BoolVar(&shuffle, "shuffle", false, "set true or false to shuffle the problems (Default: false)")
+	flag.IntVar(&time, "time", 30, "set the time for answer all questions (Default: 30)")
+
+	flag.Parse()
+
 	score := 0
-	questions, questions_ids := getQuestionsFromCSV("problems.csv")
+	questions, questions_ids := getQuestionsFromCSV(filename)
 	fmt.Println("Welcome to quizz game now answer a series of questions and get the higher score")
-	for range questions_ids {
-		index := rand.Intn(len(questions_ids))
-		id := questions_ids[index]
+	for index, id := range questions_ids {
+		if shuffle == true {
+			index = rand.Intn(len(questions_ids))
+			id = questions_ids[index]
+			questions_ids = append(questions_ids[:index], questions_ids[index+1:]...)
+		}
 		score += scoreQuestion(&questions[id])
-		questions_ids = append(questions_ids[:index], questions_ids[index+1:]...)
 	}
 	fmt.Println("Congratulations, your final score is ", score)
 }
@@ -55,9 +70,10 @@ func getQuestionsFromCSV(filename string) ([]Question, []int) {
 }
 
 func scoreQuestion(question *Question) int {
-	var answer string
 	fmt.Printf("%s: ", question.question)
-	_, err := fmt.Scanln(&answer)
+	reader := bufio.NewReader(os.Stdin)
+	answer, err := reader.ReadString('\n')
+	answer = regexp.MustCompile(`[^a-zA-Z0-9 ]+`).ReplaceAllString(answer, "")
 	if err != nil {
 		log.Fatal(err)
 	}
