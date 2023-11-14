@@ -50,7 +50,7 @@ func main() {
 		}
 		fmt.Print("\033[H\033[2J")
 		fmt.Println("Time reaming: \t\t\t", remainingTime)
-		if shuffle == true {
+		if shuffle {
 			questionsLength := len(questions_ids)
 			index = rand.Intn(questionsLength)
 			id = questions_ids[index]
