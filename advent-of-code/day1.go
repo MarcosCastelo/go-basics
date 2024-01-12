@@ -54,8 +54,8 @@ func findFisrtSpelledNumbers(s string) map[int]string {
 	return numbers
 }
 
-func readLines() (lines []string) {
-	f, err := os.OpenFile("inputs/day1.txt", os.O_RDONLY, os.ModePerm)
+func ReadLines(filename string) (lines []string) {
+	f, err := os.OpenFile(filename, os.O_RDONLY, os.ModePerm)
 	if err != nil {
 		log.Fatalf("open file error: %v", err)
 		return
@@ -76,7 +76,7 @@ func readLines() (lines []string) {
 
 func main() {
 	total := 0
-	for _, line := range readLines() {
+	for _, line := range ReadLines("inputs/day1.txt") {
 		l, r := findStringNumberEnds(line)
 		leftSpelledNumbers := findFisrtSpelledNumbers(line[:l.position])
 		if len(leftSpelledNumbers) != 0 {
